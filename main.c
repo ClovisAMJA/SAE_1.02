@@ -251,7 +251,7 @@ void recommencer(t_Plateau plateau, int nbDeplacement, char fichier[]){
         int zoom = 1;
         system("clear");
         afficher_entete(fichier,nbDeplacement);
-        chargerPartie(plateau, fichier);
+        charger_partie(plateau, fichier);
         afficher_plateau(plateau, zoom);    
     }
 }
