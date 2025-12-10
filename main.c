@@ -59,14 +59,13 @@ int kbhit();
 void enregistrer_partie(t_Plateau plateau, char fichier[]);
 void charger_partie(t_Plateau plateau, char fichier[]);
 void afficher_entete(char fichier[],int nbDeplacement);
-void afficher_plateau(t_Plateau plateau, int zoom);
+void afficher_plateau(t_Plateau plateau);
 void deplacer(t_Plateau plateau, char direction,int *nbDeplacement,t_tabDeplacement t, char touche, bool pousse_caisse, int i);
-void recommencer(t_Plateau plateau, int nbDeplacement, char fichier[]);
 void gotoxy(int x, int y);
 bool gagne(t_Plateau plateau);
 void deplacements(t_tabDeplacement t , char touche, int i, bool pousse_caisse);
-void annuler_dernier_deplacement(t_tabDeplacement t, int *nbDeplacement, t_Plateau plateau, char touche, bool pousse_caisse, int i);
-void enregistrer_deplacements(t_tabDeplacement tabDeplacement, int nb, char fic[]);
+void chargerDeplacements(typeDeplacements t, char fichier[], int * nb)
+
 
 //MAIN
 int main() {
@@ -74,6 +73,7 @@ int main() {
 
     t_Plateau plateau = {};
     t_tabDeplacement t = {};
+	char fichierDep[50] = "";
     char fichier[50] = "";
     int nbDeplacement = 0;    
     int zoom = 1;
@@ -99,58 +99,18 @@ int main() {
                 char fichierDep[50] = " ";
                 printf(" Voulez-vous enregistrer la partie ?\n O pour oui, N pour non\n");
                 scanf("%c", &enregistrement);
-                if ( enregistrement == OUI){
-                    printf("Veuillez entrer le nom du fichier.sok pour enregistrer la partie : ");
-                    scanf("%s", fichier);
-                    enregistrer_partie(plateau, fichier);
-                }
-                printf("Voulez -vous enregistrer les déplacements ?\n O pour oui, N pour non\n");
-                scanf(" %c", &enregistrementDep);
-                if ( enregistrementDep == OUI){
-                    printf("Veuillez entrer le nom du fichier.dep pour enregistrer les déplacements : ");
-                    scanf("%s", fichierDep);
-                    enregistrer_deplacements(t, nbDeplacement, fichierDep);
-                }
-                system("clear");
-                break; 
-            }
-            else if (touche == RECOMMENCER){
-
-                nbDeplacement = 0;
-                recommencer(plateau, nbDeplacement,fichier);
-            }
-            deplacer(plateau, touche, &nbDeplacement, t, touche, pousse_caisse, i);
+				for(int i = 
+            	deplacer(plateau,touche, &nbDeplacement, t, touche, pousse_caisse, i);
             
-            afficher_entete(fichier, nbDeplacement);
-            afficher_plateau(plateau, zoom);
-            if(touche == ZOOMER && zoom < 3){
-
-                zoom++;
-                system("clear");
-                deplacer(plateau, touche, &nbDeplacement, t, touche, pousse_caisse, i);
-                afficher_entete(fichier, nbDeplacement);
-                afficher_plateau(plateau, zoom);
-            }
-            else if(touche == DEZOOMER && zoom > 1){
-                zoom--;
-                system("clear");
-                deplacer(plateau, touche, &nbDeplacement, t, touche, pousse_caisse, i);
-                afficher_entete(fichier, nbDeplacement);
-                afficher_plateau(plateau, zoom);
-            }
-            else if(touche == ANNULER){
-                annuler_dernier_deplacement(t, &nbDeplacement, plateau, touche, pousse_caisse, i);
-                system("clear");
-                afficher_entete(fichier, nbDeplacement);
-                afficher_plateau(plateau, zoom);
-            }
-            bool gagnee = gagne(plateau);
-            if (gagnee){
-                printf("\nFélicitations, vous avez gagné en %d déplacements !\n", nbDeplacement);
-                char enregistrementDep = ' ';
-                char fichierDep[50] = " ";                
-                printf("Voulez -vous enregistrer les déplacements ?\n O pour oui, N pour non\n");
-                scanf(" %c", &enregistrementDep);
+	            afficher_entete(fichier, nbDeplacement);
+	            afficher_plateau(plateau);
+		        bool gagnee = gagne(plateau);
+	            if (gagnee){
+	                printf("\nFélicitations, vous avez gagné en %d déplacements !\n", nbDeplacement);
+	                char enregistrementDep = ' ';
+	                char fichierDep[50] = " ";                
+	                printf("Voulez -vous enregistrer les déplacements ?\n O pour oui, N pour non\n");
+	                scanf(" %c", &enregistrementDep);
                 if ( enregistrementDep == OUI){
                     printf("Veuillez entrer le nom du fichier.dep pour enregistrer les déplacements : ");
                     scanf("%s", fichierDep);
@@ -165,17 +125,42 @@ int main() {
 
 // Déclaration des fonctions
 // Affiche le plateau de jeu à la position 
-void afficher_plateau(t_Plateau plateau, int zoom){
+void afficher_plateau(t_Plateau plateau){
 
     gotoxy(0, HEADER_LINES);
 
-    for (int ligne = 0; ligne < TAILLE * zoom; ligne++){
-        for (int colonne = 0; colonne < TAILLE * zoom; colonne++){
-            printf("%c", plateau[ligne / zoom][colonne / zoom]);
+    for (int ligne = 0; ligne < TAILLE ; ligne++){
+        for (int colonne = 0; colonne < TAILLE ; colonne++){
+            printf("%c", plateau[ligne ][colonne ]);
         }
         printf("\n");
     }
 }
+
+void chargerDeplacements(typeDeplacements t, char fichier[], int * nb){
+    FILE * f;
+    char dep;
+    *nb = 0;
+
+    f = fopen(fichier, "r");
+    if (f==NULL){
+        printf("FICHIER NON TROUVE\n");
+    } else {
+        fread(&dep, sizeof(char), 1, f);
+        if (feof(f)){
+            printf("FICHIER VIDE\n");
+        } else {
+            while (!feof(f)){
+                t[*nb] = dep;
+                (*nb)++;
+                fread(&dep, sizeof(char), 1, f);
+            }
+        }
+    }
+    fclose(f);
+}
+
+
 // Affiche l'entête du jeu avec le nom du fichier et le nombre de déplacements
 void afficher_entete(char fichier[],int nbDeplacement){
     system("clear");
@@ -241,20 +226,7 @@ void charger_partie(t_Plateau plateau, char fichier[]){
         fclose(f);
     }
 }
-// Recommence la partie en rechargeant le plateau depuis le fichier actuel
-void recommencer(t_Plateau plateau, int nbDeplacement, char fichier[]){
 
-    char reponse = ' ';
-    printf("Êtes vous sûr de recommencer ?\n O pour oui, N pour non");
-    scanf("%c",&reponse);
-    if (reponse == OUI){
-        int zoom = 1;
-        system("clear");
-        afficher_entete(fichier,nbDeplacement);
-        chargerPartie(plateau, fichier);
-        afficher_plateau(plateau, zoom);    
-    }
-}
 // Enregistre la partie dans un fichier lu au clavier
 void enregistrer_partie(t_Plateau plateau, char fichier[]){
 
@@ -400,84 +372,3 @@ void deplacements(t_tabDeplacement t , char touche, int i, bool pousse_caisse){
     }
 }
 
-
-// Fonction pour annuler le dernier déplacement, utilisant le tableau des déplacements des déplacement enregistrés
-
-void annuler_dernier_deplacement(t_tabDeplacement t, int *nbDeplacement, t_Plateau plateau, char touche, bool pousse_caisse, int i){
-    int deltalig = 0, deltaCol = 0;
-    if(*nbDeplacement <= 0) return;
-    (*nbDeplacement)--;
-    char dernier = t[*nbDeplacement];
-    bool annule_caisse = false;
-    switch(dernier){
-        case DEPLACE_BAS:
-            deltalig = -1;
-            break;
-        case DEPLACE_HAUT:
-            deltalig = 1;
-            break;
-        case DEPLACE_GAUCHE:
-            deltaCol = 1;
-            break;
-        case DEPLACE_DROITE:
-            deltaCol = -1;
-            break;
-        case DEPLACE_CAISSE_BAS:
-            deltalig = -1; 
-            annule_caisse = true;
-            break;
-        case DEPLACE_CAISSE_HAUT:
-            deltalig = 1;
-            annule_caisse = true;
-            break;
-        case DEPLACE_CAISSE_GAUCHE:
-            deltaCol = 1;
-            annule_caisse = true;
-            break;
-        case DEPLACE_CAISSE_DROITE:
-            deltaCol = -1;
-            annule_caisse = true;
-            break;
-        default:
-            return;
-    }
-    int sokobanlig = -1, sokobanCol = -1;
-    for (int lig = 0; lig < TAILLE; lig++){
-        for (int col = 0; col < TAILLE; col++){
-            if (plateau[lig][col] == SOKOBAN || plateau[lig][col] == SOKOBAN_SUR_CIBLE){
-                sokobanlig = lig; sokobanCol = col; break;
-            }
-        }if (sokobanlig != -1) break;
-    }if (sokobanlig == -1) return;
-    if (!annule_caisse) {
-        int ligPrecedente = sokobanlig + deltalig;
-        int colPrecedente = sokobanCol + deltaCol;
-        if (ligPrecedente < 0 || ligPrecedente >= TAILLE || colPrecedente < 0 
-            || colPrecedente >= TAILLE) return;
-        plateau[sokobanlig][sokobanCol] = (plateau[sokobanlig][sokobanCol] 
-            == SOKOBAN_SUR_CIBLE) ? CIBLE : CASE_VIDE;
-        plateau[ligPrecedente][colPrecedente] = (plateau[ligPrecedente][colPrecedente] 
-            == CIBLE) ? SOKOBAN_SUR_CIBLE : SOKOBAN;
-        return;
-    }
-    int DeltaLigOriginal = -deltalig;
-    int DeltaColO = -deltaCol;
-    int ligneCaisse = sokobanlig + DeltaLigOriginal;
-    int colonneCaisse = sokobanCol + DeltaColO;
-    int lignePrecedenteSok = sokobanlig - DeltaLigOriginal;
-    int colonnePrecedenteSok = sokobanCol - DeltaColO;
-    if (ligneCaisse < 0 || ligneCaisse >= TAILLE || colonneCaisse < 0 
-        || colonneCaisse >= TAILLE) return;
-    if (lignePrecedenteSok < 0 || lignePrecedenteSok >= TAILLE 
-        || colonnePrecedenteSok < 0 || colonnePrecedenteSok >= TAILLE) return;
-    if (plateau[ligneCaisse][colonneCaisse] == CAISSE_SUR_CIBLE) {
-        plateau[sokobanlig][sokobanCol] = CAISSE_SUR_CIBLE;
-    } else {
-        plateau[sokobanlig][sokobanCol] = CAISSE;
-    }
-    plateau[ligneCaisse][colonneCaisse] = (plateau[ligneCaisse][colonneCaisse] 
-        == CAISSE_SUR_CIBLE) ? CIBLE : CASE_VIDE;
-    plateau[lignePrecedenteSok][colonnePrecedenteSok] 
-    = (plateau[lignePrecedenteSok][colonnePrecedenteSok] == CIBLE) ? SOKOBAN_SUR_CIBLE : SOKOBAN;
-    return;
-}
