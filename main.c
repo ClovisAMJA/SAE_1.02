@@ -63,8 +63,7 @@ void afficher_plateau(t_Plateau plateau);
 void deplacer(t_Plateau plateau, char direction,int *nbDeplacement,t_tabDeplacement t, char touche, bool pousse_caisse, int i);
 void gotoxy(int x, int y);
 bool gagne(t_Plateau plateau);
-void deplacements(t_tabDeplacement t , char touche, int i, bool pousse_caisse);
-void chargerDeplacements(typeDeplacements t, char fichier[], int * nb)
+void chargerDeplacements(t_tabDeplacement t, char fichier[], int * nb);
 
 
 //MAIN
@@ -75,53 +74,39 @@ int main() {
     t_tabDeplacement t = {};
 	char fichierDep[50] = "";
     char fichier[50] = "";
-    int nbDeplacement = 0;    
-    int zoom = 1;
+    int nbDeplacement = 0;
     bool pousse_caisse = false;
-    int i = 0;
+	int nb = 0;
+    char touche;
     //Saisie des données
 
     printf(" Veuillez choisir votre niveau au format 'niveauX.sok' : ");
     scanf("%s", fichier);
-
+	printf(" Veuillez choisir vos deplacement au format 'niveauX.dep' : ");
+    scanf("%s", fichierDep);
     afficher_entete(fichier, nbDeplacement);
+	chargerDeplacements( t,  fichierDep, &nb);
     charger_partie(plateau, fichier);
-    afficher_plateau(plateau, zoom);
-
-    char touche;
+    afficher_plateau(plateau);
     while(1) {
-        if(kbhit()) {
-            touche = getchar();
-            if(touche == ABANDONNER ) {
-                char enregistrement = ' ';
-                char fichier[50] = " ";
-                char enregistrementDep = ' ';
-                char fichierDep[50] = " ";
-                printf(" Voulez-vous enregistrer la partie ?\n O pour oui, N pour non\n");
-                scanf("%c", &enregistrement);
-				for(int i = 
-            	deplacer(plateau,touche, &nbDeplacement, t, touche, pousse_caisse, i);
-            
-	            afficher_entete(fichier, nbDeplacement);
-	            afficher_plateau(plateau);
-		        bool gagnee = gagne(plateau);
-	            if (gagnee){
-	                printf("\nFélicitations, vous avez gagné en %d déplacements !\n", nbDeplacement);
-	                char enregistrementDep = ' ';
-	                char fichierDep[50] = " ";                
-	                printf("Voulez -vous enregistrer les déplacements ?\n O pour oui, N pour non\n");
-	                scanf(" %c", &enregistrementDep);
-                if ( enregistrementDep == OUI){
-                    printf("Veuillez entrer le nom du fichier.dep pour enregistrer les déplacements : ");
-                    scanf("%s", fichierDep);
-                    enregistrer_deplacements(t, nbDeplacement, fichierDep);
-                }
-                break; 
+			for(int i = 0 ; i < nb ; i++){
+				touche = t[i];
+				deplacer(plateau,touche, &nbDeplacement, t, touche, pousse_caisse, i);
+				afficher_entete(fichier, nbDeplacement);
+	        	afficher_plateau(plateau);
+			}
+		    bool gagnee = gagne(plateau);
+	        if (gagnee){
+	            printf("\nFélicitations, vous avez gagné en %d déplacements !\n", nbDeplacement);
+	            char enregistrementDep = ' ';
+	           	char fichierDep[50] = " ";                
+	            printf("Voulez -vous enregistrer les déplacements ?\n O pour oui, N pour non\n");
+	            scanf(" %c", &enregistrementDep);
+            	break; 
             }
         }
-    }
     return EXIT_SUCCESS;
-}
+    }
 
 // Déclaration des fonctions
 // Affiche le plateau de jeu à la position 
@@ -137,7 +122,7 @@ void afficher_plateau(t_Plateau plateau){
     }
 }
 
-void chargerDeplacements(typeDeplacements t, char fichier[], int * nb){
+void chargerDeplacements(t_tabDeplacement t, char fichier[], int * nb){
     FILE * f;
     char dep;
     *nb = 0;
@@ -174,38 +159,6 @@ void afficher_entete(char fichier[],int nbDeplacement){
     printf("\nVous avez fait %d déplacements\n", nbDeplacement);
 }
 
-int kbhit(){
-
-	// la fonction retourne :
-	// 1 si un caractere est present
-	// 0 si pas de caractere présent
-	int unCaractere=0;
-	struct termios oldt, newt;
-	int ch;
-	int oldf;
-
-	// mettre le terminal en mode non bloquant
-
-	tcgetattr(STDIN_FILENO, &oldt);
-	newt = oldt;
-	newt.c_lflag &= ~(ICANON | ECHO);
-	tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-	oldf = fcntl(STDIN_FILENO, F_GETFL, 0);
-	fcntl(STDIN_FILENO, F_SETFL, oldf | O_NONBLOCK);
- 
-	ch = getchar();
-
-	// restaurer le mode du terminal
-
-	tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
-	fcntl(STDIN_FILENO, F_SETFL, oldf);
- 
-	if(ch != EOF){
-		ungetc(ch, stdin);
-		unCaractere=1;
-	} 
-	return unCaractere;
-}
 // Charge une partie depuis un fichier
 void charger_partie(t_Plateau plateau, char fichier[]){
 
@@ -227,21 +180,6 @@ void charger_partie(t_Plateau plateau, char fichier[]){
     }
 }
 
-// Enregistre la partie dans un fichier lu au clavier
-void enregistrer_partie(t_Plateau plateau, char fichier[]){
-
-    FILE * f;
-    char finDeLigne='\n';
-
-    f = fopen(fichier, "w");
-    for (int ligne=0 ; ligne<TAILLE ; ligne++){
-        for (int colonne=0 ; colonne<TAILLE ; colonne++){
-            fwrite(&plateau[ligne][colonne], sizeof(char), 1, f);
-        }
-        fwrite(&finDeLigne, sizeof(char), 1, f);
-    }
-    fclose(f);
-}
 
 // Structure pour stocker une position sur le plateau
 typedef struct {
@@ -256,6 +194,18 @@ void gotoxy(int x, int y) {
 void deplacer(t_Plateau plateau, char direction,int *nbDeplacement,t_tabDeplacement t, char touche, bool pousse_caisse, int i){
     int deltalig = 0, deltaCol = 0;
     switch (direction) {
+        case DEPLACE_CAISSE_HAUT: 
+            deltalig = -1;
+            break;
+        case DEPLACE_CAISSE_BAS:
+            deltalig = 1;
+            break;
+        case DEPLACE_CAISSE_GAUCHE: 
+            deltaCol = -1;
+            break;
+        case DEPLACE_CAISSE_DROITE: 
+            deltaCol = 1;
+            break;
         case HAUT: 
             deltalig = -1;
             break;
@@ -293,7 +243,6 @@ void deplacer(t_Plateau plateau, char direction,int *nbDeplacement,t_tabDeplacem
         ? SOKOBAN_SUR_CIBLE : SOKOBAN;
         (*nbDeplacement)++;
         i = *nbDeplacement - 1;
-        deplacements(t,  touche,  i,  pousse_caisse);
         return;
     }
     if (targetChar == CAISSE || targetChar == CAISSE_SUR_CIBLE){
@@ -313,7 +262,6 @@ void deplacer(t_Plateau plateau, char direction,int *nbDeplacement,t_tabDeplacem
             (*nbDeplacement)++;
             i = *nbDeplacement - 1;
         }
-        deplacements(t,  touche,  i,  pousse_caisse);
         return;
     }
     return;
@@ -342,33 +290,5 @@ void enregistrer_deplacements(t_tabDeplacement tabDeplacement, int nb, char fic[
     f = fopen(fic, "w");
     fwrite(tabDeplacement,sizeof(char), nb, f);
     fclose(f);
-}
-void deplacements(t_tabDeplacement t , char touche, int i, bool pousse_caisse){
-
-    printf("%d et %c\n", pousse_caisse, touche);
-    if(pousse_caisse == true && touche == BAS){
-        t[i] = DEPLACE_CAISSE_BAS;
-    }
-    if(pousse_caisse == true && touche == HAUT){
-        t[i] = DEPLACE_CAISSE_HAUT;
-    }
-    if(pousse_caisse == true && touche == GAUCHE){
-        t[i] = DEPLACE_CAISSE_GAUCHE;
-    }
-    if(pousse_caisse == true && touche == DROITE){
-        t[i] = DEPLACE_CAISSE_DROITE;
-    }
-    if(pousse_caisse == false && touche == BAS){
-        t[i] = DEPLACE_BAS;
-    }
-    if(pousse_caisse == false && touche == HAUT){
-        t[i] = DEPLACE_HAUT;
-    }
-    if(pousse_caisse == false && touche == GAUCHE){
-        t[i] = DEPLACE_GAUCHE;
-    }
-    if(pousse_caisse == false && touche == DROITE){
-        t[i] = DEPLACE_DROITE;
-    }
 }
 
