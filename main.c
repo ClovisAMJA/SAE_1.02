@@ -57,6 +57,7 @@ typedef char t_tabDeplacement[MAX];
 
 int kbhit();
 void charger_partie(t_Plateau plateau, char fichier[]);
+void charger_partie(t_Plateau plateau, char fichier[]);
 void afficher_entete(char fichier[],int nbDeplacement);
 void afficher_plateau(t_Plateau plateau, int zoom);
 void deplacer(t_Plateau plateau, char direction,int *nbDeplacement,t_tabDeplacement t, char touche, bool pousse_caisse, int i);
@@ -178,6 +179,29 @@ void charger_partie(t_Plateau plateau, char fichier[]){
         }
         fclose(f);
     }
+}
+//Charge la liste des déplacements
+void chargerDeplacements(typeDeplacements t, char fichier[], int * nb){
+    FILE * f;
+    char dep;
+    *nb = 0;
+
+    f = fopen(fichier, "r");
+    if (f==NULL){
+        printf("FICHIER NON TROUVE\n");
+    } else {
+        fread(&dep, sizeof(char), 1, f);
+        if (feof(f)){
+            printf("FICHIER VIDE\n");
+        } else {
+            while (!feof(f)){
+                t[*nb] = dep;
+                (*nb)++;
+                fread(&dep, sizeof(char), 1, f);
+            }
+        }
+    }
+    fclose(f);
 }
 
 // Structure pour stocker une position sur le plateau
