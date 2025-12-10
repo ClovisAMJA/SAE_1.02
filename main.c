@@ -88,7 +88,7 @@ int main() {
     while(1) {
         if(kbhit()) {
             touche = getchar();
-            deplacer(plateau, &nbDeplacement, t, touche, pousse_caisse, i);
+            deplacer(plateau, &nbDeplacement, t, , pousse_caisse, i);
             
             afficher_entete(fichier, nbDeplacement);
             afficher_plateau(plateau, zoom);
@@ -214,7 +214,7 @@ void gotoxy(int x, int y) {
     printf("\033[%d;%dH", y+1, x+1);
 }
 // Déplace le sokoban dans la direction spécifiée si le mouvement est valide
-void deplacer(t_Plateau plateau, char direction,int *nbDeplacement,t_tabDeplacement t, char touche, bool pousse_caisse, int i){
+void deplacer(t_Plateau plateau, char direction,int *nbDeplacement,t_tabDeplacement t, bool pousse_caisse, int i){
     int deltalig = 0, deltaCol = 0;
     switch (direction) {
         case HAUT: 
