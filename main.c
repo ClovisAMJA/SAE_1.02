@@ -22,10 +22,6 @@ const char SOKOBAN = '@';
 const char CAISSE_SUR_CIBLE = '*';
 const char SOKOBAN_SUR_CIBLE = '+';
 const char CASE_VIDE = ' ';
-const char OUI = 'O';
-const char NON = 'N';
-const char ZOOMER = '+';
-const char DEZOOMER = '-';
 
 #define DEPLACE_CAISSE_BAS 'B'
 #define DEPLACE_CAISSE_HAUT 'H'
@@ -35,13 +31,10 @@ const char DEZOOMER = '-';
 #define DEPLACE_HAUT 'h'
 #define DEPLACE_DROITE 'd'
 #define DEPLACE_GAUCHE 'g'
-#define ANNULER 'u'
 #define GAUCHE 'q'
 #define DROITE 'd' 
 #define BAS 's'
 #define HAUT 'z'
-#define RECOMMENCER 'r'
-#define ABANDONNER 'x'
 #define TAILLE 12
 #define MAX 1500
 
@@ -88,25 +81,26 @@ int main() {
 	chargerDeplacements( t,  fichierDep, &nb);
     charger_partie(plateau, fichier);
     afficher_plateau(plateau);
+    for(int i = 0 ; i < nb ; i++){
+				touche = t[i];
+                printf("%c",touche);
+    }
     while(1) {
 			for(int i = 0 ; i < nb ; i++){
 				touche = t[i];
 				deplacer(plateau,touche, &nbDeplacement, t, touche, pousse_caisse, i);
+                usleep(5000);
 				afficher_entete(fichier, nbDeplacement);
 	        	afficher_plateau(plateau);
 			}
 		    bool gagnee = gagne(plateau);
 	        if (gagnee){
-	            printf("\nFélicitations, vous avez gagné en %d déplacements !\n", nbDeplacement);
-	            char enregistrementDep = ' ';
-	           	char fichierDep[50] = " ";                
-	            printf("Voulez -vous enregistrer les déplacements ?\n O pour oui, N pour non\n");
-	            scanf(" %c", &enregistrementDep);
+	            printf("\nFélicitations, vous avez gagné en %d déplacements !\n", nbDeplacement);              
             	break; 
             }
         }
     return EXIT_SUCCESS;
-    }
+}
 
 // Déclaration des fonctions
 // Affiche le plateau de jeu à la position 
@@ -150,12 +144,6 @@ void chargerDeplacements(t_tabDeplacement t, char fichier[], int * nb){
 void afficher_entete(char fichier[],int nbDeplacement){
     system("clear");
     printf("Vous jouez actuellement au %s\n ----------------------\n", fichier);
-    printf("\nRappel des touches : \n");
-    printf("\n| Touche Q : gauche\n| Touche Z : haut\n");
-    printf("| Touche S : bas\n| Touche D : droite\n");
-    printf("| Touche X : abandonner\n| Touche R : recommencer\n");
-    printf("| Touche + : zoomer\n| Touche - : dézoomer\n");
-    printf("| Touche U : annuler le dernier déplacement\n");
     printf("\nVous avez fait %d déplacements\n", nbDeplacement);
 }
 
@@ -236,7 +224,7 @@ void deplacer(t_Plateau plateau, char direction,int *nbDeplacement,t_tabDeplacem
     char sourceChar = plateau[sokobanlig][sokobanCol];
     char targetChar = plateau[targetlig][targetCol];
     if (targetChar == MUR) return;
-    if (targetChar == CASE_VIDE || targetChar == CIBLE){
+    if (targetChar == CASE_VIDE || targetChar == CIBLE || touche == HAUT || touche == BAS || touche == DROITE || touche == GAUCHE){
         plateau[sokobanlig][sokobanCol] = (sourceChar == SOKOBAN_SUR_CIBLE)
             ? CIBLE : CASE_VIDE;
         plateau[targetlig][targetCol] = (targetChar == CIBLE) 
@@ -245,24 +233,25 @@ void deplacer(t_Plateau plateau, char direction,int *nbDeplacement,t_tabDeplacem
         i = *nbDeplacement - 1;
         return;
     }
-    if (targetChar == CAISSE || targetChar == CAISSE_SUR_CIBLE){
-        pousse_caisse = true;
-        int behindBoxlig = targetlig + deltalig,
-        behindBoxCol = targetCol + deltaCol; 
-        if (behindBoxlig < 0 || behindBoxlig >= TAILLE 
-            || behindBoxCol < 0 || behindBoxCol >= TAILLE) return;
-        char beyondChar = plateau[behindBoxlig][behindBoxCol];
-        if (beyondChar == CASE_VIDE || beyondChar == CIBLE){
-            plateau[behindBoxlig][behindBoxCol] = 
-            (beyondChar == CIBLE) ? CAISSE_SUR_CIBLE : CAISSE;
-            plateau[targetlig][targetCol] = 
-            (targetChar == CAISSE_SUR_CIBLE) ? SOKOBAN_SUR_CIBLE : SOKOBAN  ;
-            plateau[sokobanlig][sokobanCol] = 
-            (sourceChar == SOKOBAN_SUR_CIBLE) ? CIBLE : CASE_VIDE;
-            (*nbDeplacement)++;
-            i = *nbDeplacement - 1;
-        }
-        return;
+    if (targetChar == CAISSE || targetChar == CAISSE_SUR_CIBLE || touche == DEPLACE_CAISSE_BAS 
+        || touche == DEPLACE_CAISSE_HAUT || touche == DEPLACE_CAISSE_BAS || touche == DEPLACE_CAISSE_GAUCHE){
+            pousse_caisse = true;
+            int behindBoxlig = targetlig + deltalig,
+            behindBoxCol = targetCol + deltaCol; 
+            if (behindBoxlig < 0 || behindBoxlig >= TAILLE 
+                || behindBoxCol < 0 || behindBoxCol >= TAILLE) return;
+            char beyondChar = plateau[behindBoxlig][behindBoxCol];
+            if (beyondChar == CASE_VIDE || beyondChar == CIBLE){
+                plateau[behindBoxlig][behindBoxCol] = 
+                (beyondChar == CIBLE) ? CAISSE_SUR_CIBLE : CAISSE;
+                plateau[targetlig][targetCol] = 
+                (targetChar == CAISSE_SUR_CIBLE) ? SOKOBAN_SUR_CIBLE : SOKOBAN  ;
+                plateau[sokobanlig][sokobanCol] = 
+                (sourceChar == SOKOBAN_SUR_CIBLE) ? CIBLE : CASE_VIDE;
+                (*nbDeplacement)++;
+                i = *nbDeplacement - 1;
+            }
+            return;
     }
     return;
 }
