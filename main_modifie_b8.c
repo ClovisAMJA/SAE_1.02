@@ -50,7 +50,7 @@ typedef char t_tabDeplacement[MAX];
 
 int kbhit();
 void charger_partie(t_Plateau plateau, char fichier[]);
-void chargerDeplacements(t_tabDeplacement t, char fichier[], int * nb);
+void chargerDeplacements(t_tabDeplacement t, char fichier[], int * nombreDeplacements);
 void afficher_entete(char fichier[],int nbDeplacement);
 void afficher_plateau(t_Plateau plateau, int zoom);
 void deplacer(t_Plateau plateau, char direction, int *index);
@@ -75,28 +75,37 @@ int main() {
 
     charger_partie(plateau, fichier);
     
-    // Construire le nom du fichier .dep
     char fichierDep[50] = "";
     strcpy(fichierDep, fichier);
     strcpy(fichierDep + strlen(fichierDep) - 4, ".dep");
     
+    char choixDep[50] = "";
+    int c = getchar(); 
+    if (c != '\n' && c != EOF) ungetc(c, stdin);
+    do {
+        printf("Entrez le fichier .dep à utiliser : ");
+        if (fgets(choixDep, sizeof(choixDep), stdin) == NULL) {
+            choixDep[0] = '\0';
+        } else {
+            size_t lenChoix = strlen(choixDep);
+            if (lenChoix > 0 && choixDep[lenChoix-1] == '\n') choixDep[lenChoix-1] = '\0';
+        }
+    } while (strlen(choixDep) == 0);
+    strcpy(fichierDep, choixDep);
+
     // Charger les déplacements
     chargerDeplacements(t, fichierDep, &nbDeplacement);
     
     afficher_entete(fichier, 0);
     afficher_plateau(plateau, zoom);
     
-    printf("\nExécution des %d mouvements...\n", nbDeplacement);
-    getchar(); // Attendre une touche avant de commencer
     
-    // Exécuter chaque mouvement
     for (int index = 0; index < nbDeplacement; index++) {
         deplacer(plateau, t[index], &index);
-        sleep(1); // Pause d'1 seconde entre chaque mouvement pour voir l'animation
+        usleep(50000); 
         afficher_entete(fichier, index + 1);
         afficher_plateau(plateau, zoom);
-    }
-    
+    }  
     // Vérifier la victoire uniquement après le dernier mouvement
     bool gagnee = gagne(plateau);
     if (gagnee){
@@ -108,8 +117,7 @@ int main() {
     return EXIT_SUCCESS;
 }
 
-// Déclaration des fonctions
-// Affiche le plateau de jeu à la position 
+// Affiche le plateau de jeu.
 void afficher_plateau(t_Plateau plateau, int zoom){
 
     gotoxy(0, HEADER_LINES);
@@ -121,7 +129,7 @@ void afficher_plateau(t_Plateau plateau, int zoom){
         printf("\n");
     }
 }
-// Affiche l'entête du jeu avec le nom du fichier et le nombre de déplacements
+// Affiche l'entête du jeu avec le nom du fichier et le nombre de déplacements.
 void afficher_entete(char fichier[],int nbDeplacement){
     system("clear");
     printf("Vous jouez actuellement au %s\n ----------------------\n", fichier);
@@ -134,14 +142,13 @@ void afficher_entete(char fichier[],int nbDeplacement){
     printf("\nVous avez fait %d déplacements\n", nbDeplacement);
 }
 
+
+// Indique si un caractère est disponible sur l'entrée standard (non bloquant).
 int kbhit(){
 
-	// la fonction retourne :
-	// 1 si un caractere est present
-	// 0 si pas de caractere présent
-	int unCaractere=0;
+    int unCaractere=0;
 	struct termios oldt, newt;
-	int ch;
+    int caractereLu;
 	int oldf;
 
 	// mettre le terminal en mode non bloquant
@@ -153,20 +160,20 @@ int kbhit(){
 	oldf = fcntl(STDIN_FILENO, F_GETFL, 0);
 	fcntl(STDIN_FILENO, F_SETFL, oldf | O_NONBLOCK);
  
-	ch = getchar();
+    caractereLu = getchar();
 
 	// restaurer le mode du terminal
 
 	tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
 	fcntl(STDIN_FILENO, F_SETFL, oldf);
  
-	if(ch != EOF){
-		ungetc(ch, stdin);
-		unCaractere=1;
-	} 
+    if(caractereLu != EOF){
+        ungetc(caractereLu, stdin);
+        unCaractere=1;
+    } 
 	return unCaractere;
 }
-// Charge une partie depuis un fichier
+// Charge une partie depuis un fichier .sok
 void charger_partie(t_Plateau plateau, char fichier[]){
 
     FILE * f;
@@ -186,11 +193,11 @@ void charger_partie(t_Plateau plateau, char fichier[]){
         fclose(f);
     }
 }
-//Charge la liste des déplacements depuis un fichier .dep
-void chargerDeplacements(t_tabDeplacement t, char fichier[], int * nb){
+// Charge la liste des déplacements depuis un fichier .dep
+void chargerDeplacements(t_tabDeplacement t, char fichier[], int * nombreDeplacements){
     FILE * f;
     char dep;
-    *nb = 0;
+    *nombreDeplacements = 0;
 
     f = fopen(fichier, "r");
     if (f==NULL){
@@ -200,48 +207,47 @@ void chargerDeplacements(t_tabDeplacement t, char fichier[], int * nb){
     
     while (fread(&dep, sizeof(char), 1, f) == 1){
         if (dep != '\n' && dep != '\r') {
-            t[*nb] = dep;
-            (*nb)++;
+            t[*nombreDeplacements] = dep;
+            (*nombreDeplacements)++;
         }
     }
     
     fclose(f);
-    printf("Chargement de %d mouvements depuis %s\n", *nb, fichier);
+    printf("Chargement de %d mouvements depuis %s\n", *nombreDeplacements, fichier);
 }
 
-// Structure pour stocker une position sur le plateau
 typedef struct {
     int x;
     int y;
 } t_Position;
-// Déplace le curseur à la position (x, y) dans le terminal
+// Place le curseur à la position (x, y) dans le terminal
 void gotoxy(int x, int y) {
     printf("\033[%d;%dH", y+1, x+1);
 }
-// Déplace le sokoban dans la direction spécifiée si le mouvement est valide
+// Applique un déplacement du sokoban selon la direction donnée.
 void deplacer(t_Plateau plateau, char direction, int *index){
     int deltalig = 0, deltaCol = 0;
-    char mapped_direction = direction;
+    char direction_convertie = direction;
     
     // Mapper les caractères de déplacement au code interne
     switch (tolower(direction)) {
         case 'h': // haut
-            mapped_direction = HAUT;
+            direction_convertie = HAUT;
             break;
         case 'b': // bas
-            mapped_direction = BAS;
+            direction_convertie = BAS;
             break;
         case 'g': // gauche
-            mapped_direction = GAUCHE;
+            direction_convertie = GAUCHE;
             break;
         case 'd': // droite
-            mapped_direction = DROITE;
+            direction_convertie = DROITE;
             break;
         default:
             return; 
     }
     
-    switch (mapped_direction) {
+    switch (direction_convertie) {
         case HAUT: 
             deltalig = -1;
             break;
@@ -297,7 +303,7 @@ void deplacer(t_Plateau plateau, char direction, int *index){
     }
     return;
 }
-// Vérifie si le joueur a gagné en s'assurant qu'il n'y a plus de caisses non placées sur les cibles
+// Vérifie si toutes les caisses sont sur les cibles (condition de victoire).
 bool gagne(t_Plateau plateau){
 
     for (int ligne = 0; ligne < TAILLE; ligne++){
@@ -312,4 +318,3 @@ bool gagne(t_Plateau plateau){
     }
     return true;
 }
-
