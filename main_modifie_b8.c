@@ -2,7 +2,7 @@
 // Auteur : ABOUT Clovis 1B2
 // Date de finalisation : 29/11/2025
 
-//² Inclusion des bibliothèques
+// Inclusion des bibliothèques
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -102,7 +102,7 @@ int main() {
     
     for (int index = 0; index < nbDeplacement; index++) {
         deplacer(plateau, t[index], &index);
-        usleep(50000); 
+        usleep(200000); 
         afficher_entete(fichier, index + 1);
         afficher_plateau(plateau, zoom);
     }  
@@ -134,11 +134,7 @@ void afficher_entete(char fichier[],int nbDeplacement){
     system("clear");
     printf("Vous jouez actuellement au %s\n ----------------------\n", fichier);
     printf("\nRappel des touches : \n");
-    printf("\n| Touche Q : gauche\n| Touche Z : haut\n");
-    printf("| Touche S : bas\n| Touche D : droite\n");
-    printf("| Touche X : abandonner\n| Touche R : recommencer\n");
     printf("| Touche + : zoomer\n| Touche - : dézoomer\n");
-    printf("| Touche U : annuler le dernier déplacement\n");
     printf("\nVous avez fait %d déplacements\n", nbDeplacement);
 }
 
@@ -214,6 +210,11 @@ void chargerDeplacements(t_tabDeplacement t, char fichier[], int * nombreDeplace
     
     fclose(f);
     printf("Chargement de %d mouvements depuis %s\n", *nombreDeplacements, fichier);
+}
+
+void optimisationFichierDeplacement(t_tabDeplacement t, int * nbDeplacements){
+
+    
 }
 
 typedef struct {
